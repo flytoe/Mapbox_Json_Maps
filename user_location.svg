@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="66px" height="66px" viewBox="0 0 66 66" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 47.1 (45422) - http://www.bohemiancoding.com/sketch -->
+    <title>Artboard</title>
+    <desc>Created with Sketch.</desc>
+    <defs>
+        <circle id="path-1" cx="32.5" cy="32.5" r="9.5"></circle>
+    </defs>
+    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Artboard">
+            <g id="Oval">
+                <use fill="#D0021B" fill-rule="evenodd" xlink:href="#path-1"></use>
+                <circle stroke-opacity="0.0852581522" stroke="#000000" stroke-width="18.9000008" cx="32.5" cy="32.5" r="18.9500004"></circle>
+                <use stroke="#FFFFFF" stroke-width="4.50000018" xlink:href="#path-1"></use>
+            </g>
+        </g>
+    </g>
+</svg>

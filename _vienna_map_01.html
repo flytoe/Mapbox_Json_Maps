@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset='utf-8' />
+  <title></title>
+  <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+  <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.45.0/mapbox-gl.js'></script>
+  <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.45.0/mapbox-gl.css' rel='stylesheet' />
+  <link rel="stylesheet" type="text/css" href="style.css" media="screen" />
+</head>
+
+<body>
+
+  <div id='map'></div>
+  <script src='./d3.v3.min.js' charset='utf-8'></script>
+  <script>
+    /*Map and view---------------------------------------------------*/
+
+    var mapboxaccesstoken = 'pk.eyJ1IjoiY2hhcmFjdGVyLXZpc2lvbiIsImEiOiJjamVzZ2g4aHMwODYxMzNwZzVkbnVlaWhhIn0.QZuaxIli2GOzdGPEMmuxUg'
+    var mapboxstyle = 'mapbox://styles/character-vision/cjgz9p68v002g2ro8iwkxd13a';
+    var zoommin = 7;
+    var zoommax = 15.4;
+
+    var boundseastnorth = [15.5, 47.5];
+    var boundswestsouth = [17.5, 48.8];
+
+    /*Routes and location---------------------------------------------------*/
+
+    var adc_hotel = './routes/adc-hotel.geojson'
+    var adc_seejungfrau = './routes/adc-seejungfrau.geojson'
+    var airport_adc = './routes/airport-adc.geojson'
+    var airport_seejungfrau = './routes/airport-seejungfrau.geojson'
+    var hotel_adc = './routes/hotel-adc.geojson'
+    var hotel_seejungfrau = './routes/hotel-seejungfrau.geojson'
+    var seejungfrau_adc = './routes/seejungfrau-adc.geojson'
+    var seejungfrau_hotel = './routes/seejungfrau-hotel.geojson'
+
+    var adc = "Audi Driving Camp";
+    var hotel = "Hotel";
+    var seejungfrau = "Seejungfrau";
+    var airport = "Airport";
+
+    /*Active Route and view---------------------------------------------------*/
+    var linespeed = 7; //the lower the faster
+    var displayroute = seejungfrau_hotel;
+
+    var starttitel;
+    var endtitel;
+    var pausetitel = "Pause";
+    var start;
+    var end;
+    var targetzoom;
+    var startzoom;
+
+    if (displayroute == adc_seejungfrau) {
+      starttitel = adc;
+      endtitel = seejungfrau;
+      start = [16.730,47.985];
+      end = start;
+      targetzoom = 9.6;
+      startzoom = 8.2;
+
+    } else if (displayroute == adc_hotel) {
+      starttitel = adc;
+      endtitel = hotel;
+      start = [16.800, 48.037];
+      end = [16.580, 48.133];
+      targetzoom = 8.6;
+      startzoom = 10.6;
+    } else if (displayroute == airport_adc) {
+      starttitel = airport;
+      endtitel = adc;
+      start = [16.685, 48.080];
+      end = start;
+      targetzoom = 9.4;
+      startzoom = 11.4;
+
+    } else if (displayroute == airport_seejungfrau) {
+      starttitel = airport;
+      endtitel = seejungfrau;
+      start = [16.563,48.120];
+      end = [16.700,48.045];
+      targetzoom = 9.4;
+      startzoom = 11.4;
+
+    } else if (displayroute == hotel_adc) {
+      starttitel = hotel;
+      endtitel = adc;
+      start = [16.372, 48.202];
+      end = [16.580, 48.133];
+      targetzoom = 8.6;
+      startzoom = 10.6;
+
+    } else if (displayroute == hotel_seejungfrau) {
+      starttitel = hotel;
+      endtitel = seejungfrau;
+      start = [16.372, 48.202];
+      end = [16.580, 48.100];
+      targetzoom = 8.6;
+      startzoom = 10.6;
+
+
+    } else if (displayroute == seejungfrau_adc) {
+      starttitel = seejungfrau;
+      endtitel = adc;
+      start = [16.730,47.985];
+      end = start;
+      targetzoom = 9.6;
+      startzoom = 8.2;
+
+    } else if (displayroute == seejungfrau_hotel) {
+      starttitel = seejungfrau;
+      endtitel = hotel;
+      start = [16.797, 47.941];
+      end = [16.580, 48.100];
+      targetzoom = 8.6;
+      startzoom = 10.6;
+    }
+
+    /*Script Execution---------------------------------------------------*/
+    mapboxgl.accessToken = mapboxaccesstoken;
+    var map = new mapboxgl.Map({
+      container: 'map',
+      style: mapboxstyle,
+      center: start,
+      zoom: startzoom,
+      minZoom: zoommin,
+      maxZoom: zoommax,
+      maxBounds: [
+        boundseastnorth, // west, south
+        boundswestsouth //east, north
+      ],
+      interactive: true
+    });
+
+    var long = getUrlVars()['lg'];
+    var lat = getUrlVars()['la'];
+
+    if (long == null || lat == null) {
+      long = 0.0;
+      lat = 0.0;
+    }
+
+    var geojson = {
+      type: 'FeatureCollection',
+      features: [{
+        type: 'Feature',
+        geometry: {
+          type: 'Point',
+          coordinates: [long, lat]
+        },
+      }, ]
+    };
+
+    geojson.features.forEach(function(marker) {
+      var el = document.createElement('div');
+      el.className = 'marker';
+      new mapboxgl.Marker(el)
+        .setLngLat(marker.geometry.coordinates)
+        .addTo(map);
+    });
+
+    var isAtStart = true;
+    var target = isAtStart ? end : start;
+    isAtStart = !isAtStart;
+
+    map.flyTo({
+      center: target,
+      zoom: targetzoom,
+      bearing: 0,
+      speed: 0.6,
+      curve: 0.6,
+      easeInOutQuad: function(t) {
+        return t < .5 ? 2 * t * t : -1 + (4 - 2 * t) * t
+      },
+    });
+
+
+    map.on('load', function() {
+
+
+      var layerID = 'route2'
+      d3.json(displayroute, function(err, data) {
+        if (err) throw err;
+
+        var coordinates = data.features[0].geometry.coordinates;
+        var startcoordinates = data.features[0].geometry.coordinates[0];
+        var endcoordinates = data.features[0].geometry.coordinates[data.features[0].geometry.coordinates.length - 1];
+        var pausecoordinates = [0, 0];
+
+        console.log(startcoordinates);
+        console.log(endcoordinates);
+
+
+        data.features[0].geometry.coordinates = [coordinates[0]];
+
+
+        map.addSource('trace', {
+          type: 'geojson',
+          data: data
+        });
+        map.addLayer({
+          "id": "trace",
+          "type": "line",
+          "source": "trace",
+          "paint": {
+            "line-color": "#D41920",
+            "line-opacity": 1,
+            "line-width": 4
+          }
+        });
+
+        map.addLayer({
+          "id": "points",
+          "type": "symbol",
+          "source": {
+            "type": "geojson",
+            "data": {
+              "type": "FeatureCollection",
+              "features": [{
+                "type": "Feature",
+                "geometry": {
+                  "type": "Point",
+                  "coordinates": startcoordinates
+                },
+                "properties": {
+                  "title": starttitel,
+                  "icon": "Pin_start"
+                }
+              },
+              {
+                "type": "Feature",
+                "geometry": {
+                  "type": "Point",
+                  "coordinates": pausecoordinates
+                },
+                "properties": {
+                  "title": pausetitel,
+                  "icon": "Pin_pause"
+                }
+              },
+               {
+                "type": "Feature",
+                "geometry": {
+                  "type": "Point",
+                  "coordinates": endcoordinates
+                },
+                "properties": {
+                  "title": endtitel,
+                  "icon": "Pin_stop"
+                }
+              }]
+            }
+          },
+          "layout": {
+            "icon-image": "{icon}",
+            "icon-offset": [0, -15],
+            "text-field": "{title}",
+            "text-size": 12,
+            "text-line-height": 1.2,
+            "text-max-width": 10,
+            "text-optional": true,
+            "text-font": ["Audi Type Extended Normal", "Arial Unicode MS Bold"],
+            "text-offset": [0, 0.7],
+            "text-anchor": "top"
+          },
+          "paint": {
+            "icon-opacity": 0.8,
+            "text-halo-color": "hsl(0, 0%, 100%)",
+            "text-halo-width": 2
+          }
+        });
+
+        var i = 0;
+        var timer = window.setInterval(function() {
+          if (i < coordinates.length) {
+            data.features[0].geometry.coordinates.push(coordinates[i]);
+            map.getSource('trace').setData(data);
+            //map.panTo(coordinates[i]);
+            i++;
+          } else {
+            window.clearInterval(timer);
+          }
+        }, linespeed);
+      });
+    });
+
+
+    function getUrlVars() {
+      var vars = {};
+      var parts = window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, function(m, key, value) {
+        vars[key] = value;
+      });
+      return vars;
+    }
+  </script>
+</body>
+
+</html>

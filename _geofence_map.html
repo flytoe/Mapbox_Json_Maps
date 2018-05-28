@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset='utf-8'/>
+    <title>C. in V.</title>
+    <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no'/>
+    <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.41.0/mapbox-gl.js'></script>
+    <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.41.0/mapbox-gl.css' rel='stylesheet'/>
+    <link rel="stylesheet" type="text/css" href="style.css" media="screen"/>
+</head>
+
+<body>
+
+<div id='map'></div>
+<a id='locate_me' class="buttonmap" onclick=" clickHandler_locateMe()">
+<svg width="24" height="24" viewBox="0 0 24 24" version="1.1" xmlns="http://www.w3.org/2000/svg">
+    <path d="M11.5,17 L11.5,23 L11.5,17 Z M11.5,0 L11.5,6 L11.5,0 Z M23,11.5 L17,11.5 L23,11.5 Z M6,11.5 L0,11.5 L6,11.5 Z M20.5,11.5 C20.5,16.5 16.5,20.5 11.5,20.5 C6.5,20.5 2.5,16.5 2.5,11.5 C2.5,6.5 6.5,2.5 11.5,2.5 C16.5,2.5 20.5,6.5 20.5,11.5 C20.5,11.5 20.5,11.5 20.5,11.5 Z" stroke="#fff" stroke-width="1" fill="none" fill-rule="evenodd"/>
+</svg>
+</a>
+
+
+<a id='zoom_out' class="buttonmap" onclick=" clickHandler_zoomIn()">
+<svg width="24" height="24" viewBox="0 0 24 24" version="1.1" xmlns="http://www.w3.org/2000/svg">
+    <title>
+        system-remove-small
+    </title>
+    <g stroke="#fff" stroke-width="1" fill="none" fill-rule="evenodd">
+        <path d="M15,11.4 L8,11.4"/>
+        <circle cx="11.5" cy="11.5" r="11"/>
+    </g>
+</svg>
+</a>
+<a id='zoom_in' class="buttonmap" onclick=" clickHandler_zoomOut()">
+<svg width="24" height="24" viewBox="0 0 24 24" version="1.1" xmlns="http://www.w3.org/2000/svg">
+    <title>
+        system-add-small
+    </title>
+    <g stroke="#fff" stroke-width="1" fill="none" fill-rule="evenodd">
+        <path d="M11.5,7 L11.5,16 M16,11.4 L7,11.4"/>
+        <circle cx="11.5" cy="11.5" r="11"/>
+    </g>
+</svg>
+</a>
+
+
+<script src='./d3.v3.min.js' charset='utf-8'></script>
+<script>
+
+    const metersToPixelsAtMaxZoom = ( meters, latitude ) =>
+        meters / 0.075 / Math.cos( latitude * Math.PI / 180 );
+
+
+    mapboxgl.accessToken = 'pk.eyJ1IjoiZmx5dG9lIiwiYSI6ImNqOTAxbDBiYzJvbzYyd3BsZm42czRxZDcifQ.RxpQ9bWxPQw50nk5G0fY4g';
+    
+    var my_long = getUrlVars()['lg'];
+    var my_lat = getUrlVars()['la'];
+	
+    if ( my_long == null || my_lat == null ) {
+		 // Vienna Center
+         my_long = 16.3958399;
+         my_lat = 48.2167269;
+    }
+
+	// das is für den Zoom & Camera
+    
+    var start = [my_long, my_lat];
+    var end = [my_long, my_lat];
+    var map = new mapboxgl.Map( {
+        container: 'map',
+        style: 'mapbox://styles/flytoe/cj900nlg0jer02ro3buymr9g2',
+        center: start,
+        zoom: 10.5,
+        minZoom: 5,
+        maxZoom: 15.4,
+
+        interactive: true
+    } );
+    /*
+     maxBounds: [
+            [15.0, 42.0],
+            [16, 53.1]
+          ],
+          */
+    var linespeed = 70;
+    var targetzoom = 9.4;
+	
+	var zoomFactor = targetzoom;
+
+    // Liste Geofences Static hier im Dokument?
+
+
+
+    var geojson = {
+        type: 'FeatureCollection',
+        features: [{
+            type: 'Feature',
+            geometry: {
+                type: 'Point',
+                coordinates: [my_long, my_lat]
+            },
+        },]
+    };
+
+    geojson.features.forEach( function ( marker ) {
+        var el = document.createElement( 'div' );
+        el.className = 'marker';
+        new mapboxgl.Marker( el )
+            .setLngLat( marker.geometry.coordinates )
+            .addTo( map );
+    } );
+
+    var isAtStart = true;
+    var target = isAtStart ? end : start;
+    isAtStart = !isAtStart;
+
+ 	flyTo(target, targetzoom, 0.9);
+
+    map.on( 'load', function () {
+        var layerID = 'route2';
+
+        makeGeoCircle( this, [16.3, 48.22], 0.3 );
+
+        makeGeoCircle( this, [16.4, 48.12], 0.8 );
+        
+        //value
+        makeGeoCircle( this, [9.219495, 48.786508], 0.2 );
+        makeGeoCircle( this, [9.174569, 48.767720], 0.2 );
+
+    } );
+    
+    map.addControl(new mapboxgl.ScaleControl({
+    maxWidth: 80,
+    unit: 'metric'
+}));
+
+    function getUrlVars() {
+        var vars = {};
+        var parts = window.location.href.replace( /[?&]+([^=&]+)=([^&]*)/gi, function ( m, key, value ) {
+            vars[key] = value;
+        } );
+        return vars;
+    }
+	
+	function flyTo(_target, _targetzoom, _speed){
+		map.flyTo( {
+ 		     center: _target,
+ 		     zoom: _targetzoom,
+ 		     bearing: 0,
+ 		     speed: _speed,
+ 		     curve: 0.6,
+ 		     easeInOutQuad: function ( t ) {
+ 		         return t < .5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+ 		     },
+ 		});
+	}
+
+	// ----------------------------------------------------------------------------------- Buttons
+	
+	function clickHandler_locateMe()
+	{
+	 	flyTo(target, targetzoom, 0.9);
+	}
+	function clickHandler_zoomIn()
+	{
+		zoomFactor -= 2.5;
+		flyTo(target, zoomFactor, 0.6); 
+		console.log("++");	
+	} 
+	
+	function clickHandler_zoomOut()
+	{
+		zoomFactor += 2.5;
+		flyTo(target, zoomFactor, 0.6); 
+		console.log("--");	
+	} 
+
+	// ----------------------------------------------------------------------------------- Geofence Basic Draws
+    var createGeoJSONCircle = function ( center, radiusInKm, points ) {
+        if ( !points ) points = 64;
+
+        var coords = {
+            latitude: center[1],
+            longitude: center[0]
+        };
+
+        var km = radiusInKm;
+
+        var ret = [];
+        var distanceX = km / (111.320 * Math.cos( coords.latitude * Math.PI / 180 ));
+        var distanceY = km / 110.574;
+
+        var theta, x, y;
+        for ( var i = 0; i < points; i++ ) {
+            theta = (i / points) * (2 * Math.PI);
+            x = distanceX * Math.cos( theta );
+            y = distanceY * Math.sin( theta );
+
+            ret.push( [coords.longitude + x, coords.latitude + y] );
+        }
+        ret.push( ret[0] );
+
+        return {
+            "type": "geojson",
+            "data": {
+                "type": "FeatureCollection",
+                "features": [{
+                    "type": "Feature",
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [ret]
+                    }
+                }]
+            }
+        };
+    };
+    function makeGeoCircle( targetMap, coordinates, radius ) {
+        let polygon = uniqid();
+        targetMap.addSource( polygon, createGeoJSONCircle( coordinates, radius ) );
+        targetMap.addLayer( {
+            "id": polygon,
+            "type": "fill",
+            "source": polygon,
+            "layout": {},
+            "paint": {
+                "fill-color": "#df2000",
+                "fill-opacity": 0.5
+            }
+        } );
+    }
+
+
+	// ----------------------------------------------------------------------------------- uniqid
+    function uniqid() {
+        var ts = String( new Date().getTime() ), i = 0, out = '';
+        for ( i = 0; i < ts.length; i += 2 ) {
+            out += Number( ts.substr( i, 2 ) ).toString( 36 );
+        }
+        return ('d' + out);
+    }
+
+
+</script>
+</body>
+
+</html>
