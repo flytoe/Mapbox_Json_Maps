@@ -19,6 +19,7 @@ Just convert this after you have entered your api key in [https://www.gpsies.com
 
 # 4. Save GeoJson and edit
 remove gpsies header in Json and replace to the first coordinates.
+
 	{
 	    "type": "FeatureCollection",
 	    "features": [
