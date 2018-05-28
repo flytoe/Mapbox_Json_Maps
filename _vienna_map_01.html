@@ -26,6 +26,7 @@
     var boundswestsouth = [17.5, 48.8];
 
     /*Routes and location---------------------------------------------------*/
+    var all_routes = './routes/_all_routes.geojson'
 
     var adc_hotel = './routes/adc-hotel.geojson'
     var adc_seejungfrau = './routes/adc-seejungfrau.geojson'
@@ -195,6 +196,23 @@
 
         data.features[0].geometry.coordinates = [coordinates[0]];
 
+
+
+
+        map.addSource('trace_all', {
+          type: 'geojson',
+          data: all_routes
+        });
+        map.addLayer({
+          "id": "trace_all",
+          "type": "line",
+          "source": "trace_all",
+          "paint": {
+            "line-color": "#a0a0a0",
+            "line-opacity": 0.6,
+            "line-width": 4
+          }
+        });
 
         map.addSource('trace', {
           type: 'geojson',
